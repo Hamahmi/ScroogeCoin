@@ -2,7 +2,8 @@
 
 __author__ = "Hamahmi"
 
-
+import argparse
+import os
 import random
 
 # You are allowed to use predefined hash and digital signature libraries.
@@ -14,6 +15,14 @@ import keyboard
 # Elliptic Curve Digital Signature Algorithm
 # https://github.com/warner/python-ecdsa
 from ecdsa import SigningKey, VerifyingKey
+
+parser = argparse.ArgumentParser(description="ScroogeCoin")
+parser.add_argument(
+    "--name", "-n", type=str, default="output", help="the output file name"
+)
+# parser.add_argument("--log", dest="log", action="store_true")
+args = parser.parse_args()
+
 
 # ❖ For digital signature, use any of the technique described throughout the course.
 
@@ -87,7 +96,18 @@ class Transaction:
         self.coins = coins
         self.sender_puk = sender_puk
         self.receiver_puk = receiver_puk
-        self.hash = sha256(bytes(str(self.__hash__()), encoding="ascii")).hexdigest()
+        self.hash = sha256(
+            bytes(
+                (
+                    "tx"
+                    + str(self.ID)
+                    + str(self.coins)
+                    + str(sender_puk)
+                    + str(receiver_puk)
+                ),
+                encoding="ascii",
+            )
+        ).hexdigest()
 
     def sign_tx(self, private_key):
         self.signature = sign(private_key, str(self.hash))
@@ -118,6 +138,9 @@ class Transaction:
             + str(len(self.coins))
             + " SC"
             + "\n"
+            + "CoinID : "
+            + str(self.coins[0].ID)
+            + "\n"
             + "------------------------------------------------"
         )
 
@@ -147,7 +170,12 @@ class Block:
         Block.block_counter += 1
         self.transactions = transactions
         self.prev_hash = prev_hash
-        self.hash = sha256(bytes(str(self.__hash__()), encoding="ascii")).hexdigest()
+        self.hash = sha256(
+            bytes(
+                (str(self.ID) + str(self.transactions) + str(prev_hash)),
+                encoding="ascii",
+            )
+        ).hexdigest()
 
     def sign_bk(self, private_key):
         self.signature = sign(private_key, str(self.hash))
@@ -184,14 +212,14 @@ class Scrooge:
         self.sign_final_hp()
         # 9- A user cannot confirm a transaction unless it is published on the blockchain.
         self.confirm_new_transactions()
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print("A new block appended !")
-        print("The current blockchain : ")
+        outret = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+        outret += "A new block appended !\n"
+        outret += "The current blockchain : \n"
         for block in self.ledger:
             tids = ""
             for tr in block.transactions:
                 tids += str(tr.ID) + ", "
-            print(
+            outret += (
                 "<--"
                 + (
                     (
@@ -209,9 +237,17 @@ class Scrooge:
                 + str(block.hash)
                 + " || Block Transactions' IDs : "
                 + tids[:-2]
-                + ")"
+                + ")\n"
             )
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        outret += (
+            "<-- ( Final H() : "
+            + str(self.final_hp.thash)
+            + " , signature : "
+            + str(self.final_hp.signature.hex())
+            + "\n"
+        )
+        outret += "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+        return outret
 
     def confirm_new_transactions(self):
         senders = []
@@ -251,25 +287,30 @@ class Scrooge:
         self.temp_block.append(new_trans)
         # ❖ Scoorge should print the block under construction for each new transaction
         # added (include the transaction details)
-        print("################################################")
-        print("A new transaction added !")
-        print("Block under construction : ")
+        outret2 = "################################################\n"
+        outret2 += "A new transaction added !\n"
+        outret2 += "Block under construction : \n"
         for trans in self.temp_block:
-            print(trans.details())
-        print("################################################")
+            outret2 += trans.details() + "\n"
+        outret2 += "################################################\n"
+        return outret2
 
 
 if __name__ == "__main__":
 
-    print("###############      Start       ###############")
+    output = ""
+    printn = "###############      Start       ###############"
+    output += printn + "\n"
+    print(printn)
     random.seed(23)
     scrooge = Scrooge()
     # A network of 100 users will simulate the transaction processes.
     for i in range(100):
         scrooge.users.append(User())
 
-    print("###############  Creating coins  ###############")
-    print()
+    printn = "###############  Creating coins  ###############"
+    output += printn + "\n"
+    print(printn)
     # Initially each user will have 10 ScroogCoins.
     for user in scrooge.users:
         for i in range(10):
@@ -280,18 +321,30 @@ if __name__ == "__main__":
             )
             # 8- Scrooge will create and sign the 10 initial scrooge coins for each user.
             new_trans.sign_tx(scrooge.private_key)
-            scrooge.add_trans_to_temp_block(new_trans)
+            printn = scrooge.add_trans_to_temp_block(new_trans)
+            output += printn + "\n"
+            print(printn)
         # Once Scrooge accumulates 10 transaction, he can form a block and attach it to the blockchain.
-        scrooge.create_new_block()
+        printn = scrooge.create_new_block()
+        output += printn + "\n"
+        print(printn)
     # ❖ Print initially the public key and the amount of coins for each user.
     for user in scrooge.users:
-        print("User's public key : " + get_string_key(user.public_key))
-        print("Amount of coins this user has : " + str(len(user.coins)) + " coins.")
-        print()
+        printn = "User's public key : " + get_string_key(user.public_key)
+        output += printn + "\n"
+        print(printn)
+        printn = "Amount of coins this user has : " + str(len(user.coins)) + " coins.\n"
+        output += printn + "\n"
+        print(printn)
 
     while True:
         if keyboard.is_pressed(" "):
-            print("Space is pressed")
+            print("The code was terminated since the key ‘Space’ was pressed!")
+            print("Saving all the printed data to a text file.")
+            filename = args.name if ".txt" in args.name else args.name + ".txt"
+            with open(filename, "w") as f:
+                f.write(output)
+            print("Output saved to " + filename)
             break
         """
         As long as the system is running,
@@ -340,7 +393,9 @@ if __name__ == "__main__":
                 # ❖ If verified, Scrooge adds the transaction to the blockchain. Double spending
                 # can only happen before the transaction is published.
                 if valid_transaction:
-                    scrooge.add_trans_to_temp_block(new_trans)
+                    printn = scrooge.add_trans_to_temp_block(new_trans)
+                    output += printn + "\n"
+                    print(printn)
                 else:
                     print(
                         "The transaction is not valid, and won't be added to the blockchain!"
@@ -350,4 +405,6 @@ if __name__ == "__main__":
         # attach it to the blockchain
         # 7- If 5 and 6 are verified Scrooge publishes the transaction to the block.
         if len(scrooge.temp_block) == 10:
-            scrooge.create_new_block()
+            printn = scrooge.create_new_block()
+            output += printn + "\n"
+            print(printn)
