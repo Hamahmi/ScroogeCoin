@@ -67,6 +67,10 @@ Scrooge then verifies the signature and verify that the coins in the transaction
 
 If the block under construction reaches 10 transactions, scrooge creates a block and sign it, and add it to the blockchain. We print the blockchain for each new block added.
 
+**Notes*: 
+  - Accourding to piazza I can include only 1 coin in each transaction -which I did but can be improved to add more than 1 coin in each transaction-, therefore, don't be surprised when you find the blockchain huge (1k transactions for creating the coins and giving them to users i.e. 100 blocks initially)
+  - Again accourding to piazza, the ID of the transaction and the block is the hash of them, however, there's a value for each of them called __counter, which is unique in all transactions/blocks.
+
 # Output Format
 Values inside `{}` are variable.
 - User Info (printed after the transactions for the 10 coins for all users are made) :

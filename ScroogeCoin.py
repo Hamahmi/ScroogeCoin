@@ -68,7 +68,10 @@ class Coin:
 
     def __init__(self):
         # 1- Each coin should have a coin ID.
-        self.ID = Coin.coin_counter
+        self.ID = sha256(
+            bytes(("coin" + str(Coin.coin_counter)), encoding="ascii")
+        ).hexdigest()
+
         Coin.coin_counter += 1
 
     def sign_coin(self, private_key):
@@ -101,7 +104,7 @@ class Transaction:
     trans_counter = 0
 
     def __init__(self, prev_hash, coins, sender_puk, receiver_puk):
-        self.ID = Transaction.trans_counter
+        self.transcount = Transaction.trans_counter
         Transaction.trans_counter += 1
         self.prev_hash = prev_hash
         self.coins = coins
@@ -111,7 +114,7 @@ class Transaction:
             bytes(
                 (
                     "tx"
-                    + str(self.ID)
+                    + str(self.transcount)
                     + str(self.coins)
                     + str(sender_puk)
                     + str(receiver_puk)
@@ -119,6 +122,7 @@ class Transaction:
                 encoding="ascii",
             )
         ).hexdigest()
+        self.ID = self.hash
 
     def sign_tx(self, private_key):
         self.signature = sign(private_key, str(self.hash))
@@ -133,15 +137,8 @@ class Transaction:
             + "Transaction "
             + str(self.ID)
             + "\n"
-            + "Hash : "
-            + str(self.hash)
-            + "\n"
             + (
-                (
-                    "Previous Transaction Hashpointer : "
-                    + str(self.prev_hash.thash)
-                    + "\n"
-                )
+                ("Previous Transaction : " + str(self.prev_hash.thash) + "\n")
                 if self.prev_hash
                 else ""
             )
@@ -186,16 +183,17 @@ class Block:
     block_counter = 0
 
     def __init__(self, transactions, prev_hash):
-        self.ID = Block.block_counter
+        self.blockcount = Block.block_counter
         Block.block_counter += 1
         self.transactions = transactions
         self.prev_hash = prev_hash
         self.hash = sha256(
             bytes(
-                (str(self.ID) + str(self.transactions) + str(prev_hash)),
+                (str(self.blockcount) + str(self.transactions) + str(prev_hash)),
                 encoding="ascii",
             )
         ).hexdigest()
+        self.ID = self.hash
 
     def sign_bk(self, private_key):
         self.signature = sign(private_key, str(self.hash))
@@ -242,19 +240,12 @@ class Scrooge:
             outret += (
                 "<--"
                 + (
-                    (
-                        "(PrevHash : "
-                        + str(block.prev_hash.thash)
-                        + " PrevID : "
-                        + str(block.prev_hash.pointer)
-                    )
+                    ("(Previous block : " + str(block.prev_hash.thash))
                     if block.prev_hash
                     else "("
                 )
                 + " BlockID : "
                 + str(block.ID)
-                + " BlockHash : "
-                + str(block.hash)
                 + " || Block Transactions' IDs : "
                 + tids[:-2]
                 + ")\n"
