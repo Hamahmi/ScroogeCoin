@@ -2,41 +2,37 @@
 
 __author__ = "Hamahmi"
 
-import argparse
-import os
-import random
+from argparse import ArgumentParser
 
 # You are allowed to use predefined hash and digital signature libraries.
 # Mention which libraries you used. (sha256 for hashing, ecdsa for DS)
 from hashlib import sha256
-
-import keyboard
+from random import randint, seed
 
 # Elliptic Curve Digital Signature Algorithm
 # https://github.com/warner/python-ecdsa
 from ecdsa import SigningKey, VerifyingKey
+from keyboard import is_pressed
 
-parser = argparse.ArgumentParser(description="ScroogeCoin")
+parser = ArgumentParser(description="ScroogeCoin")
 parser.add_argument(
-    "--name", "-n", type=str, default="output", help="the output file name"
+    "--name", "-n", type=str, default="output", help="The output file name"
 )
-# parser.add_argument("--log", dest="log", action="store_true")
+parser.add_argument(
+    "--dontprint",
+    "-d",
+    dest="dontprint",
+    action="store_true",
+    help="If you don't want to print anything (and just save the output in --name)",
+)
 args = parser.parse_args()
 
 
 # ❖ For digital signature, use any of the technique described throughout the course.
 
 
-def verify_signature(public_key, message, signature):
-    message = bytes(message, encoding="ascii")
-    try:
-        return public_key.verify(signature, message, hashfunc=sha256)
-    except:
-        return False
-
-
 def generate_keys():
-    private_key = SigningKey.generate()  # uses NIST192p
+    private_key = SigningKey.generate()
     public_key = private_key.verifying_key
     return private_key, public_key
 
@@ -45,6 +41,14 @@ def sign(private_key, message):
     message = bytes(message, encoding="ascii")
     signature = private_key.sign(message, hashfunc=sha256)
     return signature
+
+
+def verify_signature(public_key, message, signature):
+    message = bytes(message, encoding="ascii")
+    try:
+        return public_key.verify(signature, message, hashfunc=sha256)
+    except:
+        return False
 
 
 def get_string_key(key):
@@ -302,12 +306,11 @@ if __name__ == "__main__":
     printn = "###############      Start       ###############"
     output += printn + "\n"
     print(printn)
-    random.seed(23)
+    seed(23)
     scrooge = Scrooge()
     # A network of 100 users will simulate the transaction processes.
     for i in range(100):
         scrooge.users.append(User())
-
     printn = "###############  Creating coins  ###############"
     output += printn + "\n"
     print(printn)
@@ -323,24 +326,48 @@ if __name__ == "__main__":
             new_trans.sign_tx(scrooge.private_key)
             printn = scrooge.add_trans_to_temp_block(new_trans)
             output += printn + "\n"
-            print(printn)
+            if not args.dontprint:
+                print(printn)
         # Once Scrooge accumulates 10 transaction, he can form a block and attach it to the blockchain.
         printn = scrooge.create_new_block()
         output += printn + "\n"
-        print(printn)
+        if not args.dontprint:
+            print(printn)
     # ❖ Print initially the public key and the amount of coins for each user.
-    for user in scrooge.users:
-        printn = "User's public key : " + get_string_key(user.public_key)
-        output += printn + "\n"
+    printn = "#############  Users' Initial Info  ############\n"
+    output += printn + "\n"
+    if not args.dontprint:
         print(printn)
-        printn = "Amount of coins this user has : " + str(len(user.coins)) + " coins.\n"
+    for x in range(len(scrooge.users)):
+        user = scrooge.users[x]
+        printn = (
+            "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\nUser "
+            + str(x + 1)
+            + "\n"
+            + user.public_key.to_pem().decode("utf-8")
+        )
         output += printn + "\n"
-        print(printn)
-
+        if not args.dontprint:
+            print(printn)
+        printn = (
+            "Amount of coins this user has : "
+            + str(len(user.coins))
+            + " coins.\n"
+            + "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
+        )
+        output += printn + "\n"
+        if not args.dontprint:
+            print(printn)
+    printn = "########  Starting random transactions  ########"
+    output += printn + "\n"
+    print(printn)
+    printn = "########  To stop press the key ‘Space’ ########"
+    output += printn + "\n"
+    print(printn)
     while True:
-        if keyboard.is_pressed(" "):
-            print("The code was terminated since the key ‘Space’ was pressed!")
-            print("Saving all the printed data to a text file.")
+        if is_pressed(" "):
+            print("############  Terminating the code  ############")
+            print("## Saving all the printed data to a text file ##")
             filename = args.name if ".txt" in args.name else args.name + ".txt"
             with open(filename, "w") as f:
                 f.write(output)
@@ -354,18 +381,16 @@ if __name__ == "__main__":
         ❖ A simulation of the network, with multiple users and the randomized process
         of making a transaction, making each transaction reach an arbitrary user.
         """
-        sender_index = random.randint(0, len(scrooge.users) - 1)
-        receiver_index = random.randint(0, len(scrooge.users) - 1)
+        sender_index = randint(0, len(scrooge.users) - 1)
+        receiver_index = randint(0, len(scrooge.users) - 1)
         # A != B
         while sender_index == receiver_index:
-            receiver_index = random.randint(0, len(scrooge.users) - 1)
+            receiver_index = randint(0, len(scrooge.users) - 1)
 
         sender = scrooge.users[sender_index]
         receiver = scrooge.users[receiver_index]
         if len(sender.coins) > 0:
-            amount = random.randint(
-                1, min(len(sender.coins), (10 - len(scrooge.temp_block)))
-            )
+            amount = randint(1, min(len(sender.coins), (10 - len(scrooge.temp_block))))
             for t in range(amount):
                 coin = sender.coins[t]
                 new_trans = Transaction(
@@ -395,11 +420,13 @@ if __name__ == "__main__":
                 if valid_transaction:
                     printn = scrooge.add_trans_to_temp_block(new_trans)
                     output += printn + "\n"
-                    print(printn)
+                    if not args.dontprint:
+                        print(printn)
                 else:
-                    print(
-                        "The transaction is not valid, and won't be added to the blockchain!"
-                    )
+                    if not args.dontprint:
+                        print(
+                            "The transaction is not valid, and won't be added to the blockchain!"
+                        )
 
         # Once Scrooge accumulates 10 transaction, he can form a block and
         # attach it to the blockchain
@@ -407,4 +434,5 @@ if __name__ == "__main__":
         if len(scrooge.temp_block) == 10:
             printn = scrooge.create_new_block()
             output += printn + "\n"
-            print(printn)
+            if not args.dontprint:
+                print(printn)
