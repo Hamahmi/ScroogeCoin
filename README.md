@@ -23,7 +23,7 @@ python ScroogeCoin.py
 However, there are some optional parameters if you want :
 ```
 python ScroogeCoin.py -h
-usage: ScroogeCoin.py [-h] [--name NAME] [--dontprint]
+usage: ScroogeCoin.py [-h] [--name NAME] [--dontprint] [--initial]
 
 ScroogeCoin
 
@@ -32,10 +32,13 @@ optional arguments:
   --name NAME, -n NAME  The output file name
   --dontprint, -d       If you don't want to print anything (and just save the
                         output in --name)
+  --initial, -i         print the initial transactions (The ones where scrooge
+                        creates the coins and pays the users)
 ```
 
-- using -n Name to modify the output.txt name to be Name.txt (or whatever you want)
-- using -d in order to stop printing to the console and just saving the output eventually to output.txt (**Note that the code runs much faster this way**)
+- using `-n` Name to modify the output.txt name to be Name.txt (or whatever you want)
+- using `-d` in order to stop printing to the console and just saving the output eventually to output.txt (**Note that the code runs much faster this way**)
+- using `-i` prints the initial transactions where scrooge sends the coins to the users
 
 # Docs
 ## Digital Signature
@@ -78,7 +81,7 @@ Amount of coins this user has : {Amount of coins (since the info is printed only
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 ```
 - Transaction (printed inside Block under construction) :
-    - for newly generated coins by Scrooge :
+    - for newly generated coins by Scrooge (only printed if -i (--initial ) is used ):
         ```
         ------------------------------------------------
         Transaction {TransactionID}
@@ -94,6 +97,7 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
         ------------------------------------------------
         Transaction {TransactionID}
         Hash : {TransactionHash}
+        Previous Transaction Hashpointer : {hashpointer to the previous transaction}
         Sender : {Sender's Public key}
         Receiver : {Receiver's Public key}
         Amount : {AmountOfCoins} SC
@@ -128,6 +132,68 @@ The current blockchain :
 # Example for output
 Three dots (. . .) vertically means that the output is trimmed here.
 
+- Without using -i :
+```
+###############      Start       ###############
+###############  Creating coins  ###############
+#############  Users' Initial Info  ############
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+User 1
+-----BEGIN PUBLIC KEY-----
+MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAErUWvqzI8rZGbatx+j5sFYxFR09ut
+7qUizLcW2O5SJCt6OxRARzecqc9WZn4297PZ
+-----END PUBLIC KEY-----
+
+Amount of coins this user has : 10 coins.
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+User 2
+-----BEGIN PUBLIC KEY-----
+MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEykbmAY0xMfJmQ9DiBKeMb6CckcQj
+AXInMSKolykp1GcOk5mpVnG1ZH2sphzXkdXC
+-----END PUBLIC KEY-----
+
+Amount of coins this user has : 10 coins.
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+.
+.
+.
+########  Starting random transactions  ########
+########  To stop press the key ‘Space’ ########
+################################################
+A new transaction added !
+Block under construction :
+------------------------------------------------
+Transaction 1000
+Hash : 843c29200cc1f73fccdb5a8be943d0f787705b1f3f50aa51e00768568f528515
+Previous Transaction Hashpointer : d92a01570a8901182d76090bc2096a28370b428e5895069169b97365f4b9e09a
+Sender : 1bf9a33f55a0519d6168b769c39d6219b4a4aa62d0972cebf6913db9e99c55c8ff50c486e37d9c3967f8e268dd284306
+Receiver : 36b43948ff610c7c927d0ca8b308974164b4c73b52cd0d89eda84aa7e491076239b1a2bbbd9f50e0905d76b9cca3b854
+Amount : 1 SC
+CoinID : 990
+------------------------------------------------
+################################################
+.
+.
+.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A new block appended !
+The current blockchain :
+<--( BlockID : 0 BlockHash : b10dfec9d5dfe0444beec76ef02667a9d4d4dedadcee920fed0b7b88674c1dbd || Block Transactions' IDs : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+.
+.
+.
+<--(PrevHash : 57e7f9320fbe288ea19032e37225f8fc2df93ee9b8b70e5c37ed6b05c57e6038 PrevID : 99 BlockID : 100 BlockHash : 1275df4592b45dca1a017c9b2f9048fd11b932c2911b07a361ad35ca2c4fafc3 || Block Transactions' IDs : 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009)
+<-- ( Final H() : 1275df4592b45dca1a017c9b2f9048fd11b932c2911b07a361ad35ca2c4fafc3 , signature : c4b008873b8a6c3393637d219d11ecc0dfaff76c01557d3773e95b5c9038d3a372525ae96af1d3446f41cdae34f331f4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+############  Terminating the code  ############
+## Saving all the printed data to a text file ##
+Output saved to output.txt
+```
+
+- With using -i :
 ```
 ###############      Start       ###############
 ###############  Creating coins  ###############
@@ -148,7 +214,7 @@ CoinID : 0
 .
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A new block appended !
-The current blockchain : 
+The current blockchain :
 <--( BlockID : 0 BlockHash : 8d9f3d58269710cac594415da8b2f813a2009a598026550c1d3d82970e992f33 || Block Transactions' IDs : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 <--(PrevHash : 8d9f3d58269710cac594415da8b2f813a2009a598026550c1d3d82970e992f33 PrevID : 0 BlockID : 1 BlockHash : c98c783417c5ca8af3edde88699d45ed51823035dbdeb9f89a60aef1a1abba22 || Block Transactions' IDs : 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)
 <--(PrevHash : c98c783417c5ca8af3edde88699d45ed51823035dbdeb9f89a60aef1a1abba22 PrevID : 1 BlockID : 2 BlockHash : 50265f696e97d7e122046099edca171dd9e4780821e3ff9094c05ec8aea81a5d || Block Transactions' IDs : 20, 21, 22, 23, 24, 25, 26, 27, 28, 29)
@@ -189,6 +255,7 @@ Block under construction :
 ------------------------------------------------
 Transaction 1000
 Hash : 843c29200cc1f73fccdb5a8be943d0f787705b1f3f50aa51e00768568f528515
+Previous Transaction Hashpointer : d92a01570a8901182d76090bc2096a28370b428e5895069169b97365f4b9e09a
 Sender : 1bf9a33f55a0519d6168b769c39d6219b4a4aa62d0972cebf6913db9e99c55c8ff50c486e37d9c3967f8e268dd284306
 Receiver : 36b43948ff610c7c927d0ca8b308974164b4c73b52cd0d89eda84aa7e491076239b1a2bbbd9f50e0905d76b9cca3b854
 Amount : 1 SC
@@ -198,6 +265,16 @@ CoinID : 990
 .
 .
 .
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A new block appended !
+The current blockchain :
+<--( BlockID : 0 BlockHash : b10dfec9d5dfe0444beec76ef02667a9d4d4dedadcee920fed0b7b88674c1dbd || Block Transactions' IDs : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+.
+.
+.
+<--(PrevHash : 57e7f9320fbe288ea19032e37225f8fc2df93ee9b8b70e5c37ed6b05c57e6038 PrevID : 99 BlockID : 100 BlockHash : 1275df4592b45dca1a017c9b2f9048fd11b932c2911b07a361ad35ca2c4fafc3 || Block Transactions' IDs : 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009)
+<-- ( Final H() : 1275df4592b45dca1a017c9b2f9048fd11b932c2911b07a361ad35ca2c4fafc3 , signature : c4b008873b8a6c3393637d219d11ecc0dfaff76c01557d3773e95b5c9038d3a372525ae96af1d3446f41cdae34f331f4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ############  Terminating the code  ############
 ## Saving all the printed data to a text file ##
 Output saved to output.txt

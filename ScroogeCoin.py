@@ -25,6 +25,13 @@ parser.add_argument(
     action="store_true",
     help="If you don't want to print anything (and just save the output in --name)",
 )
+parser.add_argument(
+    "--initial",
+    "-i",
+    dest="initial",
+    action="store_true",
+    help="print the initial transactions (The ones where scrooge creates the coins and pays the users)",
+)
 args = parser.parse_args()
 
 
@@ -129,6 +136,15 @@ class Transaction:
             + "Hash : "
             + str(self.hash)
             + "\n"
+            + (
+                (
+                    "Previous Transaction Hashpointer : "
+                    + str(self.prev_hash.thash)
+                    + "\n"
+                )
+                if self.prev_hash
+                else ""
+            )
             + (
                 ("Sender : " + get_string_key(self.sender_puk))
                 if self.prev_hash
@@ -325,14 +341,16 @@ if __name__ == "__main__":
             # 8- Scrooge will create and sign the 10 initial scrooge coins for each user.
             new_trans.sign_tx(scrooge.private_key)
             printn = scrooge.add_trans_to_temp_block(new_trans)
+            if args.initial:
+                output += printn + "\n"
+                if not args.dontprint:
+                    print(printn)
+        # Once Scrooge accumulates 10 transaction, he can form a block and attach it to the blockchain.
+        printn = scrooge.create_new_block()
+        if args.initial:
             output += printn + "\n"
             if not args.dontprint:
                 print(printn)
-        # Once Scrooge accumulates 10 transaction, he can form a block and attach it to the blockchain.
-        printn = scrooge.create_new_block()
-        output += printn + "\n"
-        if not args.dontprint:
-            print(printn)
     # ❖ Print initially the public key and the amount of coins for each user.
     printn = "#############  Users' Initial Info  ############\n"
     output += printn + "\n"
