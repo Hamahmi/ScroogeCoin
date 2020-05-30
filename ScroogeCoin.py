@@ -134,30 +134,30 @@ class Transaction:
         return (
             "------------------------------------------------"
             + "\n"
-            + "Transaction "
+            + "Trans ID\t: "
             + str(self.ID)
             + "\n"
             + (
-                ("Previous Transaction : " + str(self.prev_hash.thash) + "\n")
+                ("Prev Trans\t: " + str(self.prev_hash.thash) + "\n")
                 if self.prev_hash
                 else ""
             )
             + (
-                ("Sender : " + get_string_key(self.sender_puk))
+                ("Sender\t\t: " + get_string_key(self.sender_puk))
                 if self.prev_hash
-                else "Sender : Scrooge *COINBASE (Newly Generated Coins)*"
+                else "Sender\t\t: Scrooge *COINBASE (Newly Generated Coins)*"
             )
             + "\n"
-            + "Receiver : "
+            + "Receiver\t: "
             + get_string_key(self.receiver_puk)
             + "\n"
-            + "Amount : "
+            + "Amount\t\t: "
             + str(len(self.coins))
             + " SC"
             + "\n"
-            + "CoinID : "
+            + "CoinsIDs\t: [ "
             + str(self.coins[0].ID)
-            + "\n"
+            + " ]\n"
             + "------------------------------------------------"
         )
 
@@ -232,7 +232,7 @@ class Scrooge:
         self.confirm_new_transactions()
         outret = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
         outret += "A new block appended !\n"
-        outret += "The current blockchain : \n"
+        outret += "The current blockchain :\n"
         for block in self.ledger:
             tids = ""
             for tr in block.transactions:
@@ -246,9 +246,9 @@ class Scrooge:
                 )
                 + " BlockID : "
                 + str(block.ID)
-                + " || Block Transactions' IDs : "
+                + " || Block Transactions' IDs : [ "
                 + tids[:-2]
-                + ")\n"
+                + " ] )\n"
             )
         outret += (
             "<-- ( Final H() : "
@@ -280,19 +280,46 @@ class Scrooge:
                         coins[i][0][0].set_coin_last_trans(coins[i][1], coins[i][2])
                         user.confirm_transaction(coins[i][0], False)
 
-    def check_coin_belongs_to_owner_and_not_double_spending(self, coin, owner):
+    def check_transaction(self, transaction):
+        """
+        returns :   0 if the transaction is valid,
+                    1 if the signature is invalid,
+                    2 if the transaction is double spending
+        """
+        # ❖ Upon detecting any transaction, scrooge verifies it by making sure the coin
+        # really belongs to the owner and it has not been spent before.
+
+        # Scrooge verifies the signature before accumulating the transaction.
+        # 5- Scrooge verifies that the transaction belongs to the owner.
+        valid_transaction = verify_signature(
+            transaction.sender_puk, str(transaction.hash), transaction.signature
+        )
+        if not valid_transaction:
+            return 1
+        # 6- Scrooge verifies that the transaction is not a Double spending.
+        for user in self.users:
+            if transaction.sender_puk == user.public_key:
+                _sender = user
+                break
         # the coin really belongs to the owner
-        if not (coin in owner.coins):
-            return False
+        for coin in transaction.coins:
+            if not (coin in _sender.coins):
+                return 2
         # and it has not been spent before
         for trans in self.temp_block:
-            if trans.prev_hash == coin.last_trans:
-                return False
+            if trans.prev_hash == transaction.prev_hash:
+                return 2
+        """
+        # Double spending can only happen before the transaction is published.
+        # Thus, this part is unnecessary, since the blocks in the ledger contains only published transactions.
         for block in self.ledger:
             for trans in block.transactions:
-                if trans.prev_hash == coin.last_trans:
-                    return False
-        return True
+                if trans.prev_hash == transaction.prev_hash:
+                    return 2
+        """
+
+        # if all checks pass -> valid transaction
+        return 0
 
     def add_trans_to_temp_block(self, new_trans):
         self.temp_block.append(new_trans)
@@ -300,9 +327,9 @@ class Scrooge:
         # added (include the transaction details)
         outret2 = "################################################\n"
         outret2 += "A new transaction added !\n"
-        outret2 += "Block under construction : \n"
-        for trans in self.temp_block:
-            outret2 += trans.details() + "\n"
+        outret2 += "Block under construction :\n"
+        for i in range(len(self.temp_block)):
+            outret2 += "Transaction_" + str(i) + " : " + self.temp_block[i].ID + "\n"
         outret2 += "################################################\n"
         return outret2
 
@@ -329,6 +356,11 @@ if __name__ == "__main__":
             new_trans = Transaction(
                 None, [new_coin], scrooge.public_key, user.public_key
             )
+            printn = new_trans.details()
+            if args.initial:
+                output += printn + "\n\n"
+                if not args.dontprint:
+                    print(printn + "\n")
             # 8- Scrooge will create and sign the 10 initial scrooge coins for each user.
             new_trans.sign_tx(scrooge.private_key)
             printn = scrooge.add_trans_to_temp_block(new_trans)
@@ -352,7 +384,9 @@ if __name__ == "__main__":
         printn = (
             "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\nUser "
             + str(x + 1)
-            + "\n"
+            + "\n\nUser's public key : "
+            + get_string_key(user.public_key)
+            + "\nPEM format :\n"
             + user.public_key.to_pem().decode("utf-8")
         )
         output += printn + "\n"
@@ -370,13 +404,17 @@ if __name__ == "__main__":
     printn = "########  Starting random transactions  ########"
     output += printn + "\n"
     print(printn)
-    printn = "########  To stop press the key ‘Space’ ########"
+    printn = "########  To stop press the key 'Space' ########"
     output += printn + "\n"
     print(printn)
     while True:
         if is_pressed(" "):
-            print("############  Terminating the code  ############")
-            print("## Saving all the printed data to a text file ##")
+            printn = "############  Terminating the code  ############"
+            output += printn + "\n"
+            print(printn)
+            printn = "## Saving all the printed data to a text file ##"
+            output += printn + "\n"
+            print(printn)
             filename = args.name if ".txt" in args.name else args.name + ".txt"
             with open(filename, "w") as f:
                 f.write(output)
@@ -412,30 +450,49 @@ if __name__ == "__main__":
                 # ❖ Upon detecting any transaction, scrooge verifies it by making sure the coin
                 # really belongs to the owner and it has not been spent before.
                 # 5- Scrooge verifies that the transaction belongs to the owner.
-                valid_transaction = verify_signature(
-                    new_trans.sender_puk, str(new_trans.hash), new_trans.signature
-                )
+                # 6- Scrooge verifies that the transaction is not a Double spending.
+                valid_transaction_code = scrooge.check_transaction(new_trans)
 
-                for coin in new_trans.coins:
-                    # 6- Scrooge verifies that the transaction is not a Double spending.
-                    valid_transaction = (
-                        valid_transaction
-                        and scrooge.check_coin_belongs_to_owner_and_not_double_spending(
-                            coin, sender
-                        )
-                    )
                 # ❖ If verified, Scrooge adds the transaction to the blockchain. Double spending
                 # can only happen before the transaction is published.
-                if valid_transaction:
+                if valid_transaction_code == 0:
+                    # 0 -> valid transaction
+                    printn = new_trans.details()
+                    output += printn + "\n\n"
+                    if not args.dontprint:
+                        print(printn + "\n")
                     printn = scrooge.add_trans_to_temp_block(new_trans)
                     output += printn + "\n"
                     if not args.dontprint:
                         print(printn)
-                else:
+                elif valid_transaction_code == 1:
+                    # 1 -> invalid signature
+                    printn = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nInvalid transaction due to invalid signature!"
+                    output += printn + "\n"
                     if not args.dontprint:
-                        print(
-                            "The transaction is not valid, and won't be added to the blockchain!"
-                        )
+                        print(printn)
+                    printn = new_trans.details()
+                    output += printn + "\n"
+                    if not args.dontprint:
+                        print(printn)
+                    printn = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+                    output += printn + "\n"
+                    if not args.dontprint:
+                        print(printn)
+                elif valid_transaction_code == 2:
+                    # 2 -> double spending
+                    printn = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nInvalid transaction due to double spending problem!"
+                    output += printn + "\n"
+                    if not args.dontprint:
+                        print(printn)
+                    printn = new_trans.details()
+                    output += printn + "\n"
+                    if not args.dontprint:
+                        print(printn)
+                    printn = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+                    output += printn + "\n"
+                    if not args.dontprint:
+                        print(printn)
 
         # Once Scrooge accumulates 10 transaction, he can form a block and
         # attach it to the blockchain

@@ -9,7 +9,10 @@ Design of a cryptocurrency similar to ScroogeCoin
   * [Classes](#classes)
 - [The Main Function](#the-main-function)
 - [Output Format](#output-format)
+  * [Quick Overview](#quick-overview)
+  * [Detailed Overview](#detailed-overview)
 - [Example for output](#example-for-output)
+- [Libraries Used](#libraries-used)
 
 
 # The Main Idea
@@ -63,68 +66,113 @@ After transferring 10 coins for each user, we print the users' info (the public 
 
 We pick 2 random users, a sender and a receiver (sender != receiver), to make a transaction with random amount of what the sender has to the receiver. Once a transaction is created it is signed by the sender's private key and scrooge gets notified.
 
-Scrooge then verifies the signature and verify that the coins in the transaction really belongs to the sender and not been spent before. If verified, Scrooge adds the transaction to a block under construction. Double spending can only happen before the transaction is published. We print the block under construction along with the transactions' details for each new valid transaction added.
+Scrooge then verifies the signature and verify that the coins in the transaction really belongs to the sender and not been spent before. If verified, Scrooge adds the transaction to a block under construction. Double spending can only happen before the transaction is published. We print the transactions' details for each new transaction, if the transaction is not valid it won't be added and the reason will be printed, however if the transaction indeed is valid, the block under construction will be printed with the IDs of the transactions in it.
 
 If the block under construction reaches 10 transactions, scrooge creates a block and sign it, and add it to the blockchain. We print the blockchain for each new block added.
 
-**Notes*: 
+**Notes*:
   - Accourding to piazza I can include only 1 coin in each transaction -which I did but can be improved to add more than 1 coin in each transaction-, therefore, don't be surprised when you find the blockchain huge (1k transactions for creating the coins and giving them to users i.e. 100 blocks initially)
   - Again accourding to piazza, the ID of the transaction and the block is the hash of them, however, there's a value for each of them called __counter, which is unique in all transactions/blocks.
 
 # Output Format
-Values inside `{}` are variable.
+_A sample output.txt is included (generated using any of the next commands : `python ScroogeCoin.py` or `python ScroogeCoin.py -d` or `python ScroogeCoin.py -n output` or `python ScroogeCoin.py -n output.txt` or any compinations of the mentioned flages._
+
+## Quick Overview
+- User
+```
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+```
+- Transaction
+```
+------------------------------------------------
+```
+- Invalid Transaction
+```
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+- Block under construction
+```
+################################################
+```
+- The Blockchain
+```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+
+
+## Detailed Overview
+**Values inside `{}` are variable.**
 - User Info (printed after the transactions for the 10 coins for all users are made) :
 ```
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-User {User count (not the id, since we use the public key as the id)}
+User {user count (not the id as we use the public key as ID)}
+
+User's public key : {hex representation of the public key}
+PEM format :
 -----BEGIN PUBLIC KEY-----
-{User's public key}
+{PEM representation of the public ke}
 -----END PUBLIC KEY-----
 
-Amount of coins this user has : {Amount of coins (since the info is printed only initially the amount of coins for each user should be 10)} coins.
+Amount of coins this user has : {number of coins} coins.
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 ```
-- Transaction (printed inside Block under construction) :
+- Transaction (printed for each transaction) :
     - for newly generated coins by Scrooge (only printed if -i (--initial ) is used ):
         ```
         ------------------------------------------------
-        Transaction {TransactionID}
-        Hash : {TransactionHash}
-        Sender : Scrooge *COINBASE (Newly Generated Coins)*
-        Receiver : {Receiver's Public key}
-        Amount : {AmountOfCoins} SC
-        CoinID : {CoinID in the transaction}
+        Trans ID	: {TransactionID}
+        Sender		: Scrooge *COINBASE (Newly Generated Coins)*
+        Receiver	: {Receiver's Public key}
+        Amount		: {AmountOfCoins} SC
+        CoinsIDs	: [ {CoinID for all the coins in the transaction} ]
         ------------------------------------------------
         ```
     - for transactions from sender to receiver :
         ```
         ------------------------------------------------
-        Transaction {TransactionID}
-        Hash : {TransactionHash}
-        Previous Transaction Hashpointer : {hashpointer to the previous transaction}
-        Sender : {Sender's Public key}
-        Receiver : {Receiver's Public key}
-        Amount : {AmountOfCoins} SC
-        CoinID : {CoinID in the transaction}
+        Trans ID	: {TransactionID}
+        Prev Trans	: {Hashpointer to the previous Transaction}
+        Sender		: {Sender's Public key}
+        Receiver	: {Receiver's Public key}
+        Amount		: {AmountOfCoins} SC
+        CoinsIDs	: [ {CoinID for all the coins in the transaction} ]
         ------------------------------------------------
+        ```
+    - for invalid transactions (double spending or invalid transaction or etc ..) :
+        ```
+        xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        Invalid transaction due to {The Reason (e.g. "double spending problem")}!
+        ------------------------------------------------
+        Trans ID	: {TransactionID}
+        Prev Trans	: {Hashpointer to the previous Transaction}
+        Sender		: {Sender's Public key}
+        Receiver	: {Receiver's Public key}
+        Amount		: {AmountOfCoins} SC
+        CoinsIDs	: [ {CoinID for all the coins in the transaction} ]
+        ------------------------------------------------
+        xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
         ```
 - Block under construction (printed when a new transaction is added):
 ```
 ################################################
 A new transaction added !
 Block under construction :
-------------------------------------------------
-{Transactions}
-------------------------------------------------
+Transaction_0 : {TransactionID}
+Transaction_1 : {TransactionID}
+.
+.
+.
 ################################################
 ```
+
 - The Blockchain (printed when a new block is added to the blockchain) :
 ```
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A new block appended !
 The current blockchain :
-<--( BlockID : {BlockID} BlockHash : {BlockHash} || Block Transactions' IDs : {BlockTransIDs})
-<--( BlockID : {BlockID} BlockHash : {BlockHash} || Block Transactions' IDs : {BlockTransIDs})
+<--( BlockID : {BlockID} || Block Transactions' IDs : [ {BlockTransIDs} ])
+<--( BlockID : {BlockID} BlockHash : {BlockHash} || Block Transactions' IDs : [ {BlockTransIDs} ])
 <--
 .
 .
@@ -144,19 +192,12 @@ Three dots (. . .) vertically means that the output is trimmed here.
 
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 User 1
------BEGIN PUBLIC KEY-----
-MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAErUWvqzI8rZGbatx+j5sFYxFR09ut
-7qUizLcW2O5SJCt6OxRARzecqc9WZn4297PZ
------END PUBLIC KEY-----
 
-Amount of coins this user has : 10 coins.
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-User 2
+User's public key : 153e1f83ee2fb667cdb5cd90283624b1e846b2255fc5b5fe26466ae3a490b0680813136a304e6452dcad463cde262ce3
+PEM format :
 -----BEGIN PUBLIC KEY-----
-MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEykbmAY0xMfJmQ9DiBKeMb6CckcQj
-AXInMSKolykp1GcOk5mpVnG1ZH2sphzXkdXC
+MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEFT4fg+4vtmfNtc2QKDYksehGsiVf
+xbX+JkZq46SQsGgIExNqME5kUtytRjzeJizj
 -----END PUBLIC KEY-----
 
 Amount of coins this user has : 10 coins.
@@ -165,53 +206,110 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 .
 .
 ########  Starting random transactions  ########
-########  To stop press the key ‘Space’ ########
+########  To stop press the key 'Space' ########
+------------------------------------------------
+Trans ID	: 2210b82e47047e70726afafc637dfa24672c68ce73afd517db64f13aec561484
+Prev Trans	: 4878ad9ac4a9ce3efedf4bb9e1b4d4d1200ad3a5f94504e62542cf7d925ee88e
+Sender		: 01cbd6232f7e31fbf43d48c6e4721f0e8e84df3cbd76aa4e32f009e4fbe425b86cd66cd7cd677debde8eee3e5d93ee13
+Receiver	: e2367bca982cb5d110a80def7421a4a9a3fb23e8c4c888c5843af46bbdfbb96ffc1beb121d6ab29ad1d88cb91be96124
+Amount		: 1 SC
+CoinsIDs	: [ e4f8c5463854e835c9afbba7c8028b378e69b21554d69b8e72af232183b87166 ]
+------------------------------------------------
+
 ################################################
 A new transaction added !
 Block under construction :
-------------------------------------------------
-Transaction 1000
-Hash : 843c29200cc1f73fccdb5a8be943d0f787705b1f3f50aa51e00768568f528515
-Previous Transaction Hashpointer : d92a01570a8901182d76090bc2096a28370b428e5895069169b97365f4b9e09a
-Sender : 1bf9a33f55a0519d6168b769c39d6219b4a4aa62d0972cebf6913db9e99c55c8ff50c486e37d9c3967f8e268dd284306
-Receiver : 36b43948ff610c7c927d0ca8b308974164b4c73b52cd0d89eda84aa7e491076239b1a2bbbd9f50e0905d76b9cca3b854
-Amount : 1 SC
-CoinID : 990
-------------------------------------------------
+Transaction_0 : 2210b82e47047e70726afafc637dfa24672c68ce73afd517db64f13aec561484
 ################################################
 .
 .
 .
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A new block appended !
 The current blockchain :
-<--( BlockID : 0 BlockHash : b10dfec9d5dfe0444beec76ef02667a9d4d4dedadcee920fed0b7b88674c1dbd || Block Transactions' IDs : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+<--( BlockID : 88de4c7c10ae5737dfe665f1ef3e0a8babb32db1f9459b5dbe97fb24fdc4e9cb || Block Transactions' IDs : [ b7e9610bdc1a18aeba630f353e2898805dc4ece1bea3f7b6d5c7c10b0d6af512, 9edb395427a14bd3c7a2cbd4c1d1b0ed17e85ee84b136be767f97ed4649318ac, d9a2ad1b7f32785feba2b216c235dead834109a4df42454b4beb97bd503fe843, 187c1ed97bdf0abbeac0ec927049d6b5934fc4f41352918bf22a873f5ad292a9, ab8c9eaf86bb45013cb7224b8985448a26ec3131b3403f17875b5e926569f7fe, 988c65bed443c34366851ba12aeb5da712afa1d9808d17776a2cc28fdf3f4dd4, c4c217dd4bfeb562edf5f9fe5beff2112d0c01952580820200be1d38ff18d753, b9baf67b3a3cc784ed513f494f2fdfdfb6e4baa7dbd5730320e051fa1231ef4b, 1b53ff3745d82eb8f81d762a8d8eb6cc9f43c26d45068f0a781e6ba1bf9efb5b, 47bc1075623e95f3a11acfccbc2ed10ddaa45205d77143179ee028d7b0491c48 ] )
 .
 .
 .
-<--(PrevHash : 57e7f9320fbe288ea19032e37225f8fc2df93ee9b8b70e5c37ed6b05c57e6038 PrevID : 99 BlockID : 100 BlockHash : 1275df4592b45dca1a017c9b2f9048fd11b932c2911b07a361ad35ca2c4fafc3 || Block Transactions' IDs : 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009)
-<-- ( Final H() : 1275df4592b45dca1a017c9b2f9048fd11b932c2911b07a361ad35ca2c4fafc3 , signature : c4b008873b8a6c3393637d219d11ecc0dfaff76c01557d3773e95b5c9038d3a372525ae96af1d3446f41cdae34f331f4
+<--(Previous block : 31ed4b6a9742f89dbfaf9a499aeb78c84ccefc49dc85fe7856daf78657d2de77 BlockID : dff41dfb0c37897c4229d96739625d848442711fe639b2b4f8cef77995d62453 || Block Transactions' IDs : [ 2210b82e47047e70726afafc637dfa24672c68ce73afd517db64f13aec561484, 680eb25b2267732a54d5a7381b1179a2bdfca76615eb5418af9d187aa3b26009, b70660eaba3f2def4dff2011d50c7530ea7b778bf1e46ae4df730e92d3c042ae, 171b07ec3f69b82140ec6d27886efcab11951bdc0f2e134ba4baff46e044b031, 8db8d907d8864726a1b4ac4af9de9503097d4f718e676a0f3db4ca5acc8c0ade, bc939ef2ce7f495ae5204275c56be110e8aa2c2a785981ae6cfb081480e8b2bc, 6bf99abb5f74e3fa79436ce49ac2d702c0e33493d282c24e28b810192d4a8bd8, 3094df85d257304c1e692dcc9670640bf1daad2480a20f9986eb8d99d995db8b, ce655cb3b35ce2978e641ccfda14830500b3c4147c4516a029c2f894d148839a, fbf35893e5274bcbb59e56647bfe2e5d9da52fd0b115830afb40b325c3fcc751 ] )
+<-- ( Final H() : dff41dfb0c37897c4229d96739625d848442711fe639b2b4f8cef77995d62453 , signature : 6136ba634a7b47ab99109fcfa6aa381f484aea3d67ffae6a48a2d83357f22927ebf871a7fd5595df0cbf6ef08903ef50
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.
+.
+.
+
+------------------------------------------------
+Trans ID	: 26f4de7e5c47212f695e666ae3a76053ac9c85e74dba05f2b35210e362a1e5a0
+Prev Trans	: 0271cb130d92fc94170f3f09a92b1add38ebff3461729a44ca2ef11f5589a5db
+Sender		: 0e52ca011c73ae94b0c812e575fdaa6a141d3d1d812bbc98a44f4e768f298c20600bd94cd287a6ee67d0dae4d6219bcd
+Receiver	: d32824459de17d9410abf74c0febab84abb3a58c767c3d07f4b358da5c9bce95e8fbf36a0d115099ea36726e612a43ca
+Amount		: 1 SC
+CoinsIDs	: [ b077b3c80787c780bb7ec9036abe6d17eda906bc70decab90f2605302b699168 ]
+------------------------------------------------
+
+################################################
+A new transaction added !
+Block under construction :
+Transaction_0 : 0eab7a0157f606225f2bea76432eeae97aa71a99ebc206e1eac6dd70f58bd7ef
+Transaction_1 : 8ad4fc65072796026234c665e152e6ef7be1966038372b26337e055e00b143d5
+Transaction_2 : 0a62f743ad2372d217cf591a9233d8293b1d3a9a51a6e08d9e7f11c5ac559c0f
+Transaction_3 : 26f4de7e5c47212f695e666ae3a76053ac9c85e74dba05f2b35210e362a1e5a0
+################################################
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Invalid transaction due to double spending problem!
+------------------------------------------------
+Trans ID	: 4ae9869ce0eea05d148b772d009f5badc5380db3304aa23b496bf2151cca387b
+Prev Trans	: 0271cb130d92fc94170f3f09a92b1add38ebff3461729a44ca2ef11f5589a5db
+Sender		: 0e52ca011c73ae94b0c812e575fdaa6a141d3d1d812bbc98a44f4e768f298c20600bd94cd287a6ee67d0dae4d6219bcd
+Receiver	: 002589cb167ad6f12fc158657f758a2d8145e125791a71e7ef6e867b0d557108aa88f4bd9e909602e6c30c1fa8e91a68
+Amount		: 1 SC
+CoinsIDs	: [ b077b3c80787c780bb7ec9036abe6d17eda906bc70decab90f2605302b699168 ]
+------------------------------------------------
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------
+Trans ID	: 54beca29ba618b039ca6416aa2210a184bfefdd11a4e4801aa2c76cc3d72d601
+Prev Trans	: c8cdcfe5b39ec85332e1bdbf34afa458511753995ded8575b02bac9ecfebbaf9
+Sender		: 4a18a2a341de48c1c3af474cd289cfe9dc9f764ee3630fadda63b30ae9855f5e49ac859cca2e8c290b4ef125646daf17
+Receiver	: 3f97c7496fc6c7d22b18afc872667548aae43920d63d2fb0ed9371b64d6ade69edccf7e5ae3db5bd1df10ecf3915af41
+Amount		: 1 SC
+CoinsIDs	: [ 8ceaa9d8152c2682170503e3e93d2b8d7d4b59d902a536261a84aa0615357e92 ]
+------------------------------------------------
+
+################################################
+A new transaction added !
+Block under construction :
+Transaction_0 : 0eab7a0157f606225f2bea76432eeae97aa71a99ebc206e1eac6dd70f58bd7ef
+Transaction_1 : 8ad4fc65072796026234c665e152e6ef7be1966038372b26337e055e00b143d5
+Transaction_2 : 0a62f743ad2372d217cf591a9233d8293b1d3a9a51a6e08d9e7f11c5ac559c0f
+Transaction_3 : 26f4de7e5c47212f695e666ae3a76053ac9c85e74dba05f2b35210e362a1e5a0
+Transaction_4 : 54beca29ba618b039ca6416aa2210a184bfefdd11a4e4801aa2c76cc3d72d601
+################################################
+.
+.
+.
 ############  Terminating the code  ############
 ## Saving all the printed data to a text file ##
-Output saved to output.txt
 ```
-
-- With using -i :
+*Note : in the invalid transaction you can see clearly why it is a double spending problem, the user tried to spend the same coin twice, and the previous transaction was in the block under construction with the same coin, thus Scrooge marked the new transaction as invalid and ignored it.*
+- With using -i (to print initial transactions of created coins details):
 ```
 ###############      Start       ###############
 ###############  Creating coins  ###############
+------------------------------------------------
+Trans ID	: b7e9610bdc1a18aeba630f353e2898805dc4ece1bea3f7b6d5c7c10b0d6af512
+Sender		: Scrooge *COINBASE (Newly Generated Coins)*
+Receiver	: 153e1f83ee2fb667cdb5cd90283624b1e846b2255fc5b5fe26466ae3a490b0680813136a304e6452dcad463cde262ce3
+Amount		: 1 SC
+CoinsIDs	: [ 47b60a8814151101a1bfaefcfb69e14718e5dcc091dec780375c1f8dd7a8ca93 ]
+------------------------------------------------
+
 ################################################
 A new transaction added !
 Block under construction :
-------------------------------------------------
-Transaction 0
-Hash : 9ea86e581b8e9c81974dcfc8280ec83a2e527eedf91ff880ba741ca75cecf6b3
-Sender : Scrooge *COINBASE (Newly Generated Coins)*
-Receiver : b9332de2494a572eb72da59df65fc2169f3b8f4e8e4879cc767203b85f9192bafeedee23b9aa01becc74aa249b250961
-Amount : 1 SC
-CoinID : 0
-------------------------------------------------
+Transaction_0 : b7e9610bdc1a18aeba630f353e2898805dc4ece1bea3f7b6d5c7c10b0d6af512
 ################################################
 .
 .
@@ -219,67 +317,18 @@ CoinID : 0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A new block appended !
 The current blockchain :
-<--( BlockID : 0 BlockHash : 8d9f3d58269710cac594415da8b2f813a2009a598026550c1d3d82970e992f33 || Block Transactions' IDs : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-<--(PrevHash : 8d9f3d58269710cac594415da8b2f813a2009a598026550c1d3d82970e992f33 PrevID : 0 BlockID : 1 BlockHash : c98c783417c5ca8af3edde88699d45ed51823035dbdeb9f89a60aef1a1abba22 || Block Transactions' IDs : 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)
-<--(PrevHash : c98c783417c5ca8af3edde88699d45ed51823035dbdeb9f89a60aef1a1abba22 PrevID : 1 BlockID : 2 BlockHash : 50265f696e97d7e122046099edca171dd9e4780821e3ff9094c05ec8aea81a5d || Block Transactions' IDs : 20, 21, 22, 23, 24, 25, 26, 27, 28, 29)
-<-- ( Final H() : 50265f696e97d7e122046099edca171dd9e4780821e3ff9094c05ec8aea81a5d , signature : 8eb5b5614b1524d2f899ea171874a3da35578573172e7d6c128ff2836fa54f6a9ea478a9850f6f8d3485733908055e3f
+<--( BlockID : 88de4c7c10ae5737dfe665f1ef3e0a8babb32db1f9459b5dbe97fb24fdc4e9cb || Block Transactions' IDs : [ b7e9610bdc1a18aeba630f353e2898805dc4ece1bea3f7b6d5c7c10b0d6af512, 9edb395427a14bd3c7a2cbd4c1d1b0ed17e85ee84b136be767f97ed4649318ac, d9a2ad1b7f32785feba2b216c235dead834109a4df42454b4beb97bd503fe843, 187c1ed97bdf0abbeac0ec927049d6b5934fc4f41352918bf22a873f5ad292a9, ab8c9eaf86bb45013cb7224b8985448a26ec3131b3403f17875b5e926569f7fe, 988c65bed443c34366851ba12aeb5da712afa1d9808d17776a2cc28fdf3f4dd4, c4c217dd4bfeb562edf5f9fe5beff2112d0c01952580820200be1d38ff18d753, b9baf67b3a3cc784ed513f494f2fdfdfb6e4baa7dbd5730320e051fa1231ef4b, 1b53ff3745d82eb8f81d762a8d8eb6cc9f43c26d45068f0a781e6ba1bf9efb5b, 47bc1075623e95f3a11acfccbc2ed10ddaa45205d77143179ee028d7b0491c48 ] )
+<-- ( Final H() : 88de4c7c10ae5737dfe665f1ef3e0a8babb32db1f9459b5dbe97fb24fdc4e9cb , signature : 6190a8a437e5fff8534007dce5f96752ea15281800df85549d9c8737a715fe3f710403d070378949e28e30c4c56eb916
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .
 .
 .
-#############  Users' Initial Info  ############
-
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-User 1
------BEGIN PUBLIC KEY-----
-MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEuTMt4klKVy63LaWd9l/CFp87j06O
-SHnMdnIDuF+Rkrr+7e4juaoBvsx0qiSbJQlh
------END PUBLIC KEY-----
-
-Amount of coins this user has : 10 coins.
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-User 2
------BEGIN PUBLIC KEY-----
-MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEIFwg4QKfznKIoPEZ83V3xTi7ssvr
-2EwHv8oNJ1n9IamLmxDnkwx3ezlwMCsnETj7
------END PUBLIC KEY-----
-
-Amount of coins this user has : 10 coins.
-$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-.
-.
-.
-########  Starting random transactions  ########
-########  To stop press the key ‘Space’ ########
-################################################
-A new transaction added !
-Block under construction :
-------------------------------------------------
-Transaction 1000
-Hash : 843c29200cc1f73fccdb5a8be943d0f787705b1f3f50aa51e00768568f528515
-Previous Transaction Hashpointer : d92a01570a8901182d76090bc2096a28370b428e5895069169b97365f4b9e09a
-Sender : 1bf9a33f55a0519d6168b769c39d6219b4a4aa62d0972cebf6913db9e99c55c8ff50c486e37d9c3967f8e268dd284306
-Receiver : 36b43948ff610c7c927d0ca8b308974164b4c73b52cd0d89eda84aa7e491076239b1a2bbbd9f50e0905d76b9cca3b854
-Amount : 1 SC
-CoinID : 990
-------------------------------------------------
-################################################
-.
-.
-.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-A new block appended !
-The current blockchain :
-<--( BlockID : 0 BlockHash : b10dfec9d5dfe0444beec76ef02667a9d4d4dedadcee920fed0b7b88674c1dbd || Block Transactions' IDs : 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-.
-.
-.
-<--(PrevHash : 57e7f9320fbe288ea19032e37225f8fc2df93ee9b8b70e5c37ed6b05c57e6038 PrevID : 99 BlockID : 100 BlockHash : 1275df4592b45dca1a017c9b2f9048fd11b932c2911b07a361ad35ca2c4fafc3 || Block Transactions' IDs : 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009)
-<-- ( Final H() : 1275df4592b45dca1a017c9b2f9048fd11b932c2911b07a361ad35ca2c4fafc3 , signature : c4b008873b8a6c3393637d219d11ecc0dfaff76c01557d3773e95b5c9038d3a372525ae96af1d3446f41cdae34f331f4
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-############  Terminating the code  ############
-## Saving all the printed data to a text file ##
-Output saved to output.txt
+The rest is the same as without usin -i
 ```
+
+# Libraries Used
+- [ArgumentParser](https://docs.python.org/3/library/argparse.html) : To get command-line options such as -i, --dontprint, etc .
+- [ecdsa](https://github.com/warner/python-ecdsa) : To generate public-private-key pairs and for digital signature.
+- [hashlib](https://docs.python.org/3/library/hashlib.html) : To hash values suing `sha256`.
+- [random](https://docs.python.org/3/library/random.html) : To generate random values (ecdsa actually uses os.urandom but we used random for random values other than those handled by ecdsa).
+- [keyboard](https://github.com/boppreh/keyboard) : To listen to keyboard input from the user (used here just to detect the space key pressed in order to terminate the code).
